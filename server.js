@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+//connect with database
+connectDB();
+
 // Routes
 app.get("/", (req, res) => {
   res.send("Hello, Express!");
