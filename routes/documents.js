@@ -11,10 +11,11 @@ const authMiddleware = require("../middleware/auth");
 const router = express.Router();
 
 // Configure AWS S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
+const { s3, bucket } = require("../config/s3");
+// // const s3 = new AWS.S3({
+// //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+// //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// });
 
 // Configure Multer for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
@@ -47,7 +48,7 @@ router.post(
 
       //  Upload to S3
       const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
+        Bucket: bucket,
         Key: `pdfs/${Date.now()}_${req.file.originalname}`,
         Body: req.file.buffer,
         ContentType: "application/pdf",
@@ -182,7 +183,7 @@ router.post("/:id/sign", authMiddleware(["SIGNER"]), async (req, res) => {
 
     // Fetch original PDF from S3
     const s3Params = {
-      Bucket: process.env.AWS_S3_BUCKET,
+      Bucket: bucket,
       Key: document.originalUrl.split("/").pop(),
     };
     const { Body } = await s3.getObject(s3Params).promise();
@@ -207,7 +208,7 @@ router.post("/:id/sign", authMiddleware(["SIGNER"]), async (req, res) => {
     // Upload signed PDF to S3
     const signedKey = `signed/${Date.now()}_${s3Params.Key}`;
     const uploadParams = {
-      Bucket: process.env.AWS_S3_BUCKET,
+      Bucket: bucket,
       Key: signedKey,
       Body: pdfBytes,
       ContentType: "application/pdf",
