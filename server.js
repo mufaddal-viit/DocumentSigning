@@ -3,6 +3,9 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const connectDB = require("./database/connectDB");
+const User = require("./models/users");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -10,15 +13,37 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-//connect with database
-connectDB();
+// Main async function
+const startServer = async () => {
+  try {
+    // Connect to MongoDB
+    await connectDB();
 
-// Routes
-app.get("/", (req, res) => {
-  res.send("Hello, Express!");
-});
+    // Optional: Insert a test user (comment this out after first run)
+    const newUser = new User({
+      name: "John Doe",
+      email: "john@example.com",
+      password: "supersecret", // ⚠️ In production, hash this
+      role: "UPLOADER",
+    });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+    await newUser.save();
+    console.log("🎉 User inserted:", newUser);
+
+    // Routes
+    app.get("/health-check", (req, res) => {
+      res.send("Hello, Server running");
+    });
+
+    // Start Express server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
+    });
+
+  } catch (err) {
+    console.error("❌ Error starting server:", err);
+    process.exit(1);
+  }
+};
+
+startServer();
