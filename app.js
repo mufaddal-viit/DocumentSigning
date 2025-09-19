@@ -1,13 +1,11 @@
 const express = require("express");
-const connectDB = require("./config/db");
+const connectDB = require("./config/connectDB");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const documentRoutes = require("./routes/documents");
 const assignmentRoutes = require("./routes/assignments");
-
-const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage() });
-app.use(upload.single("file")); // Adjust in routes as needed
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 
@@ -15,6 +13,7 @@ const app = express();
 connectDB();
 
 // Middleware
+app.use(cors());
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse form data (for file uploads)
 

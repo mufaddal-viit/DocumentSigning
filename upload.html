@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Upload PDF</title>
+  </head>
+  <body>
+    <form
+      id="uploadForm"
+      enctype="multipart/form-data"
+      method="POST"
+      action="http://localhost:3000/api/documents/upload"
+    >
+      <input type="file" name="file" accept="application/pdf" required />
+      <input
+        type="text"
+        name="signatureFields"
+        value='[{"type":"signature","x":100,"y":100,"page":1}]'
+      />
+      <input type="submit" value="Upload" />
+    </form>
+    <script>
+      const form = document.getElementById("uploadForm");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        console.log(formData);
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            headers: {
+              Authorization:
+                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4Y2QwYWE3NTBhMDUxYWJmMzUwZjE3MCIsInJvbGUiOiJVUExPQURFUiIsImlhdCI6MTc1ODI3MjI0MCwiZXhwIjoxNzU4Mjc1ODQwfQ.1fbRYAQFhggZeSv_EZVfsNYNGBzaLRf6p8iFCPRN11U",
+            },
+            body: formData,
+          });
+
+          const data = await response.json();
+          console.log("Response:", data);
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -28,4 +28,4 @@ AssignmentSchema.index({ signerId: 1 });
 
 AssignmentSchema.index({ documentId: 1, signerId: 1 }, { unique: true });
 
-module.exports = mongoose.model("AssignmentSchema", AssignmentSchema);
+module.exports = mongoose.model("Assignment", AssignmentSchema);

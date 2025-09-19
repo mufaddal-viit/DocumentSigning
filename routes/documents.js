@@ -1,12 +1,10 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
-const AWS = require("aws-sdk");
 const { PDFDocument } = require("pdf-lib");
 const multer = require("multer");
 const Document = require("../models/Document");
 const Assignment = require("../models/Assignment");
 const User = require("../models/User");
-// const AuditLog = require("../models/AuditLog");
 const authMiddleware = require("../middleware/auth");
 const router = express.Router();
 
@@ -18,9 +16,8 @@ const { s3, bucket } = require("../config/s3");
 // });
 
 // Configure Multer for file uploads
-const upload = multer({ storage: multer.memoryStorage() });
-
-// Upload a PDF (Uploader only)
+const upload = require("./pdfUploadS3");
+// Upload a PDF (Uploader only) to s3
 router.post(
   "/upload",
   authMiddleware(["UPLOADER"]),
@@ -31,8 +28,8 @@ router.post(
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
-
-      const uploaderId = req.user.id;
+      // const { originalname } = req.file;
+      console.log("🔍 A File Uploaded");
 
       //  Parse signatureFields (from multipart/form-data it's a string)
       let signatureFields = [];
@@ -53,12 +50,12 @@ router.post(
         Body: req.file.buffer,
         ContentType: "application/pdf",
       };
-      const { Location } = await s3.upload(params).promise();
+      const { Location } = await s3.upload(params).promise(); //get location of file in s3 bucket
 
       //  Save document metadata
       const document = new Document({
         uploaderId,
-        originalUrl: Location,
+        originalUrl: Location, //url is the address of file in s3
         signatureFields: signatureFields || [],
         status: "PENDING",
       });
@@ -81,6 +78,26 @@ router.post(
   }
 );
 
+////////////////////////////UPLOAD LOCALLY/////////////////////////////
+// const upload = require("./pdfUploadLocally");
+// router.post(
+//   "/upload",
+//   authMiddleware(["UPLOADER"]),
+//   upload.single("file"),
+//   (req, res) => {
+//     if (!req.file) {
+//       return res
+//         .status(400)
+//         .json({ error: "No file uploaded or file is not a PDF" });
+//     }
+
+//     res.json({
+//       message: "File uploaded successfully!",
+//       fileUrl: req.file.location, // S3 file URL
+//     });
+//   }
+// );
+/////////////////////////////////////////////////////////
 // List documents (Uploader: all their documents; Signer: assigned documents)
 router.get("/", authMiddleware(["UPLOADER", "SIGNER"]), async (req, res) => {
   try {
@@ -184,11 +201,13 @@ router.post("/:id/sign", authMiddleware(["SIGNER"]), async (req, res) => {
     // Fetch original PDF from S3
     const s3Params = {
       Bucket: bucket,
-      Key: document.originalUrl.split("/").pop(),
+      Key: document.originalUrl.split("/").pop(), //fetch only the URL part
     };
+    // getObject retrieves the PDF file as a buffer (Body) from S3
     const { Body } = await s3.getObject(s3Params).promise();
 
     // Embed signature and fields using pdf-lib
+    // The PDF buffer (Body) is loaded into pdf-lib
     const pdfDoc = await PDFDocument.load(Body);
     const page = pdfDoc.getPage(0); // Assume signature on first page or use signatureFields
     const signatureImage = await pdfDoc.embedPng(
